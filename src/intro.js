@@ -2,8 +2,8 @@
   'use strict';
   
   
-  
-  
+  // Module name
+  var objectron = {};
   
   
   

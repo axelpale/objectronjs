@@ -48,7 +48,10 @@ module.exports = function(grunt) {
         },
         src: [
           'src/intro.js',
-          'src/<%= pkg.name %>.js',
+          'src/util.js',
+          'src/unigram.js',
+          'src/ngramnode.js',
+          'src/objectron.js',
           'src/version.js',
           'src/outro.js'
         ],
@@ -160,7 +163,9 @@ module.exports = function(grunt) {
       dist: {
         options: {
           urls: [
-            'http://localhost:8000/test/basic-usage.html'
+            'http://localhost:8000/test/unigram.html',
+            'http://localhost:8000/test/ngramnode.html',
+            'http://localhost:8000/test/objectron.html'
           ]
         },
       }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit test suite</title>
+  <link rel="stylesheet" href="lib/qunit-1.13.0.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="lib/qunit-1.13.0.js"></script>
+  <script src="../objectron.js"></script>
+  <script type="text/javascript">
+    
+    var epsilon = 0.00001; // for floating point comparison
+
+    test('initial state', function testCase() {
+      var ug = objectron.unigram.create();
+      ok(ug.top().length === 0);
+    });
+    
+    test('add & top & prob', function testCase() {
+      var ug = objectron.unigram.create();
+      ug.add('a');
+      ug.add('b');
+      ok(ug.top(1).length === 1);
+      ok(ug.prob('a') > 0.5 - epsilon);
+      ok(ug.prob('a') < 0.5 + epsilon);
+    });
+
+    test('topTolerated', function testCase() {
+      var ug = objectron.unigram.create();
+      ug.add('a');
+      ug.add('a');
+      ug.add('a');
+      ug.add('a');
+      ug.add('a');
+      ug.add('b');
+      ug.add('b');
+      ug.add('b');
+      ug.add('c');
+      ug.add('c');
+      // a: 0.5
+      // b: 0.3
+      // c: 0.2
+
+      // tolerance 0.2 => min prob 0.5 - 0.5 * 0.2 = 0.4
+      deepEqual(ug.topTolerated(0.2), ['a']);
+      // tolerance 0.5 => min prob 0.5 - 0.5 * 0.5 = 0.25
+      deepEqual(ug.topTolerated(0.5), ['a', 'b']);
+      // tolerance 0.8 => min prob 0.5 - 0.5 * 0.8 = 0.1
+      deepEqual(ug.topTolerated(0.8), ['a', 'b', 'c']);
+    });
+
+    test('subtract & rank', function testCase() {
+      var ug = objectron.unigram.create();
+      ug.add('a');
+      ug.add('a');
+      ug.add('b');
+      ok(ug.rank('a') === 0, 'a rank should be 0 but is ' + ug.rank('a'));
+      ok(ug.rank('b') === 1, 'b rank should be 1 but is ' + ug.rank('b'));
+      ug.add('b');
+      ug.subtract('a');
+      ok(ug.rank('b') === 0, 'b rank should be 0 but is ' + ug.rank('b'));
+      ok(ug.rank('a') === 1, 'a rank should be 1 but is ' + ug.rank('a'));
+    });
+
+    test('dumb & load', function testCase() {
+      var ug = objectron.unigram.create();
+      var ug2 = objectron.unigram.create();
+      ug.add('a');
+      ug.add('a');
+      ug.add('b');
+      var dumped = ug.dump();
+      ug2.load(dumped);
+      deepEqual(ug2.dump(), dumped);
+      deepEqual(ug2.top(), ug.top());
+      ok(ug2.rank('a') === 0, 'a rank should be 0 but is ' + ug2.rank('a'));
+      ok(ug2.rank('b') === 1, 'b rank should be 1 but is ' + ug2.rank('b'));
+    });
+
+    test('size', function testCase() {
+      var ug = objectron.unigram.create();
+      ug.add('a');
+      ug.add('a');
+      ug.add('b');
+      ok(ug.size() === 2);
+    });
+    
+  </script>
+</body>
+</html>
