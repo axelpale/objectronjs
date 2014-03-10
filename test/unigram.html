@@ -52,6 +52,31 @@
       deepEqual(ug.topTolerated(0.8), ['a', 'b', 'c']);
     });
 
+    test('topSubsetTolerated', function testCase() {
+      var ug = objectron.unigram.create();
+      ug.add('a');
+      ug.add('a');
+      ug.add('a');
+      ug.add('a');
+      ug.add('b');
+      ug.add('b');
+      ug.add('b');
+      ug.add('c');
+      ug.add('c');
+      ug.add('d');
+      // P(a) = 0.4
+      // P(b) = 0.3
+      // P(c) = 0.2
+      // P(d) = 0.1
+
+      // min prob 0.15
+      deepEqual(ug.topSubsetTolerated(['b', 'd'], 0.5), ['b']);
+      // min prob 0.15
+      deepEqual(ug.topSubsetTolerated(['b', 'c', 'd'], 0.5), ['b', 'c']);
+      // min prob 0.08
+      deepEqual(ug.topSubsetTolerated(['a', 'd'], 0.8), ['a', 'd']);
+    });
+
     test('subtract & rank', function testCase() {
       var ug = objectron.unigram.create();
       ug.add('a');

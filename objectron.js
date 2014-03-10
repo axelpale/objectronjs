@@ -1,4 +1,4 @@
-/*! objectron - v0.0.1 - 2014-03-09
+/*! objectron - v0.0.1 - 2014-03-10
  * https://github.com/axelpale/objectronjs
  *
  * Copyright (c) 2014 Akseli Palen <akseli.palen@gmail.com>;
@@ -135,6 +135,28 @@ objectron.unigram = (function () {
       } // else
       return 0;
     };
+    
+    that.top = function (n) {
+      // n highest ranked in ordered array.
+      // Parameter
+      //   n (optional, default 0)
+      //     0
+      //       Return all
+      //     1
+      //       Return array [mostProbableHash]
+      if (typeof n !== 'number') {
+        n = 0;
+      }
+
+      n = Math.min(n, order.length);
+      if (n > 0) {
+        return order.slice(0, n);
+      } // else
+      if (n === 0) {
+        return order.slice(0); // copy
+      } // else
+      return [];
+    };
 
     that.topTolerated = function (tolerance) {
       // Similart to top(n) but instead n results, only
@@ -167,27 +189,53 @@ objectron.unigram = (function () {
 
       return order.slice(0,i);
     };
-    
-    that.top = function (n) {
-      // n highest ranked in ordered array.
-      // Parameter
-      //   n (optional, default 0)
-      //     0
-      //       Return all
-      //     1
-      //       Return array [mostProbableHash]
-      if (typeof n !== 'number') {
-        n = 0;
+
+    that.topSubsetTolerated = function (hashes, tolerance) {
+      // Similar to topTolerated but only with given hashes.
+
+      var i,
+          p,
+          h,
+          probs,
+          max,
+          toleratedHashes,
+          toleratedProbs;
+
+      // Collect probabilities and find the largest
+      probs = [];
+      max = 0;
+      for (i = 0; i < hashes.length; i += 1) {
+        p = this.prob(hashes[i]); // zero for non-existing
+        probs.push(p);
+        if (p > max) {
+          max = p;
+        }
       }
 
-      n = Math.min(n, order.length);
-      if (n > 0) {
-        return order.slice(0, n);
-      } // else
-      if (n === 0) {
-        return order.slice(0); // copy
-      } // else
-      return [];
+      // Filter out the intolerated
+      toleratedHashes = [];
+      toleratedProbs = {};
+      for (i = 0; i < hashes.length; i += 1) {
+        p = probs[i];
+        h = hashes[i];
+        if (p > max - max * tolerance) {
+          toleratedHashes.push(h);
+          toleratedProbs[h] = p;
+        }
+      }
+
+      // Sort the tolerated by probability, highest first
+      toleratedHashes.sort(function (a, b) {
+        var pa = toleratedProbs[a];
+        var pb = toleratedProbs[b];
+        // higher the probability, lower the index
+        if (pa > pb) {
+          return -1; // pa greater, pa should have lower index
+        } // else
+        return 1;
+      });
+
+      return toleratedHashes;
     };
 
     that.rank = function (hash) {
@@ -325,6 +373,37 @@ objectron.ngramnode = (function () {
       return children[first].given(rest);
     };
 
+    that.topTolerated = function (hashSequence, tolerance) {
+      // A set of most probable successors for the given sequence,
+      // ordered by probability, most probable first.
+      // The set contains those hashes with probability at least
+      // the greatest probability * (1 - tolerance).
+      if (typeof hashSequence === 'string') {
+        hashSequence = [hashSequence];
+      }
+
+      if (typeof hashSequence === 'undefined') {
+        hashSequence = [];
+      }
+
+      if (!isArray(hashSequence)) {
+        throw 'error'; // TODO better error
+      } // else
+
+      if (hashSequence.length <= 0) {
+        return histogram.topTolerated(tolerance);
+      } // else continue recursion
+
+      var first = hashSequence[0];
+      var rest = hashSequence.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
+      } // else
+      return children[first].topTolerated(rest, tolerance);
+    };
+
     that.top = function (hashSequence, n) {
       // n most probable successors for the sequence,
       // ordered by probability, most probable first.
@@ -434,7 +513,7 @@ objectron.ngramnode = (function () {
 
     that.load = function (dump) {
       var child;
-      
+
       histogram.load(dump.histogram);
 
       for (child in dump.children) {

@@ -68,6 +68,37 @@ objectron.ngramnode = (function () {
       return children[first].given(rest);
     };
 
+    that.topTolerated = function (hashSequence, tolerance) {
+      // A set of most probable successors for the given sequence,
+      // ordered by probability, most probable first.
+      // The set contains those hashes with probability at least
+      // the greatest probability * (1 - tolerance).
+      if (typeof hashSequence === 'string') {
+        hashSequence = [hashSequence];
+      }
+
+      if (typeof hashSequence === 'undefined') {
+        hashSequence = [];
+      }
+
+      if (!isArray(hashSequence)) {
+        throw 'error'; // TODO better error
+      } // else
+
+      if (hashSequence.length <= 0) {
+        return histogram.topTolerated(tolerance);
+      } // else continue recursion
+
+      var first = hashSequence[0];
+      var rest = hashSequence.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
+      } // else
+      return children[first].topTolerated(rest, tolerance);
+    };
+
     that.top = function (hashSequence, n) {
       // n most probable successors for the sequence,
       // ordered by probability, most probable first.
@@ -177,7 +208,7 @@ objectron.ngramnode = (function () {
 
     that.load = function (dump) {
       var child;
-      
+
       histogram.load(dump.histogram);
 
       for (child in dump.children) {

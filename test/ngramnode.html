@@ -43,6 +43,22 @@
       deepEqual(ng.top(['a']), [], 'should return [] by default');
     });
 
+    test('topTolerated', function testCase() {
+      var ng = objectron.ngramnode.create();
+      ng.add(['a', 'b']);
+      ng.add(['a', 'b']);
+      ng.add(['a', 'b']);
+      ng.add(['a', 'c']);
+      
+      // P(b|a) = 0.75
+      // P(c|a) = 0.25
+
+      // tolerance 0.3 => min prob 0.75 * (1 - 0.3) ≈ 0.52
+      deepEqual(ng.topTolerated(['a'], 0.3), ['b']);
+      // tolerance 0.7 => min prob 0.75 * (1 - 0.7) ≈ 0.22
+      deepEqual(ng.topTolerated(['a'], 0.7), ['b', 'c']);
+    });
+
     test('given', function testCase() {
       var ng = objectron.ngramnode.create();
       ng.add(['a', 'a']);

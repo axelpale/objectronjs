@@ -111,6 +111,28 @@ objectron.unigram = (function () {
       } // else
       return 0;
     };
+    
+    that.top = function (n) {
+      // n highest ranked in ordered array.
+      // Parameter
+      //   n (optional, default 0)
+      //     0
+      //       Return all
+      //     1
+      //       Return array [mostProbableHash]
+      if (typeof n !== 'number') {
+        n = 0;
+      }
+
+      n = Math.min(n, order.length);
+      if (n > 0) {
+        return order.slice(0, n);
+      } // else
+      if (n === 0) {
+        return order.slice(0); // copy
+      } // else
+      return [];
+    };
 
     that.topTolerated = function (tolerance) {
       // Similart to top(n) but instead n results, only
@@ -143,27 +165,53 @@ objectron.unigram = (function () {
 
       return order.slice(0,i);
     };
-    
-    that.top = function (n) {
-      // n highest ranked in ordered array.
-      // Parameter
-      //   n (optional, default 0)
-      //     0
-      //       Return all
-      //     1
-      //       Return array [mostProbableHash]
-      if (typeof n !== 'number') {
-        n = 0;
+
+    that.topSubsetTolerated = function (hashes, tolerance) {
+      // Similar to topTolerated but only with given hashes.
+
+      var i,
+          p,
+          h,
+          probs,
+          max,
+          toleratedHashes,
+          toleratedProbs;
+
+      // Collect probabilities and find the largest
+      probs = [];
+      max = 0;
+      for (i = 0; i < hashes.length; i += 1) {
+        p = this.prob(hashes[i]); // zero for non-existing
+        probs.push(p);
+        if (p > max) {
+          max = p;
+        }
       }
 
-      n = Math.min(n, order.length);
-      if (n > 0) {
-        return order.slice(0, n);
-      } // else
-      if (n === 0) {
-        return order.slice(0); // copy
-      } // else
-      return [];
+      // Filter out the intolerated
+      toleratedHashes = [];
+      toleratedProbs = {};
+      for (i = 0; i < hashes.length; i += 1) {
+        p = probs[i];
+        h = hashes[i];
+        if (p > max - max * tolerance) {
+          toleratedHashes.push(h);
+          toleratedProbs[h] = p;
+        }
+      }
+
+      // Sort the tolerated by probability, highest first
+      toleratedHashes.sort(function (a, b) {
+        var pa = toleratedProbs[a];
+        var pb = toleratedProbs[b];
+        // higher the probability, lower the index
+        if (pa > pb) {
+          return -1; // pa greater, pa should have lower index
+        } // else
+        return 1;
+      });
+
+      return toleratedHashes;
     };
 
     that.rank = function (hash) {
