@@ -174,6 +174,7 @@ objectron.unigram = (function () {
           h,
           probs,
           max,
+          minProb,
           toleratedHashes,
           toleratedProbs;
 
@@ -187,6 +188,7 @@ objectron.unigram = (function () {
           max = p;
         }
       }
+      minProb = max - max * tolerance;
 
       // Filter out the intolerated
       toleratedHashes = [];
@@ -194,7 +196,8 @@ objectron.unigram = (function () {
       for (i = 0; i < hashes.length; i += 1) {
         p = probs[i];
         h = hashes[i];
-        if (p > max - max * tolerance) {
+        if (p >= minProb) {
+          // Equivalent probability also 
           toleratedHashes.push(h);
           toleratedProbs[h] = p;
         }

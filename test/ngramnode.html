@@ -57,6 +57,37 @@
       deepEqual(ng.topTolerated(['a'], 0.3), ['b']);
       // tolerance 0.7 => min prob 0.75 * (1 - 0.7) ≈ 0.22
       deepEqual(ng.topTolerated(['a'], 0.7), ['b', 'c']);
+
+      // Zero tolerance
+      deepEqual(ng.topTolerated(['a'], 0), ['b']);
+    });
+
+    test('topSubsetTolerated', function testCase() {
+      var ng = objectron.ngramnode.create();
+      ng.add(['a', 'a']);
+      ng.add(['a', 'a']);
+      ng.add(['a', 'a']);
+      ng.add(['a', 'a']);
+      ng.add(['a', 'b']);
+      ng.add(['a', 'b']);
+      ng.add(['a', 'b']);
+      ng.add(['a', 'c']);
+      ng.add(['a', 'c']);
+      ng.add(['a', 'd']);
+      // P(a|a) = 0.4
+      // P(b|a) = 0.3
+      // P(c|a) = 0.2
+      // P(d|a) = 0.1
+
+      // min prob 0.15
+      deepEqual(ng.topSubsetTolerated(['a'], ['b', 'd'], 0.5), ['b']);
+      // min prob 0.15
+      deepEqual(ng.topSubsetTolerated('a', ['b', 'c', 'd'], 0.5), ['b', 'c']);
+      // min prob 0.08
+      deepEqual(ng.topSubsetTolerated('a', ['a', 'd'], 0.8), ['a', 'd']);
+
+      // Zero tolerance
+      deepEqual(ng.topSubsetTolerated(['a'], ['b', 'd'], 0), ['b']);
     });
 
     test('given', function testCase() {

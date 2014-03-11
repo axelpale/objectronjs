@@ -50,6 +50,9 @@
       deepEqual(ug.topTolerated(0.5), ['a', 'b']);
       // tolerance 0.8 => min prob 0.5 - 0.5 * 0.8 = 0.1
       deepEqual(ug.topTolerated(0.8), ['a', 'b', 'c']);
+
+      // Zero tolerance
+      deepEqual(ug.topTolerated(0), ['a']);
     });
 
     test('topSubsetTolerated', function testCase() {
@@ -75,6 +78,9 @@
       deepEqual(ug.topSubsetTolerated(['b', 'c', 'd'], 0.5), ['b', 'c']);
       // min prob 0.08
       deepEqual(ug.topSubsetTolerated(['a', 'd'], 0.8), ['a', 'd']);
+
+      // Zero tolerance
+      deepEqual(ug.topSubsetTolerated(['b', 'd'], 0), ['b']);
     });
 
     test('subtract & rank', function testCase() {

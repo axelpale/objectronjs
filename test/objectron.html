@@ -47,6 +47,17 @@
          p < 1 + epsilon, p + 'should be 1');
     });
 
+    test('topSingle', function testCase() {
+      var b = objectron.objectron.create();
+
+      b.push(['a', 'b', 'c', 'a', 'b']);
+      equal(b.topSingle(), 'c');
+
+      var c = objectron.objectron.create(3);
+      c.push(['a', 'b', 'c', 'a', 'b', 'd', 'b', 'd', 'a', 'b']);
+      equal(c.topSingle(), 'd');
+    });
+
     test('dump & load', function testCase() {
       var b = objectron.objectron.create();
       var c = objectron.objectron.create();

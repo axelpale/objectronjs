@@ -2,7 +2,7 @@
 ngram node
 
 TODO: hashSequence -> sequence
-TODO: hash -> key
+TODO: hash -> event
 */
 
 objectron.ngramnode = (function () {
@@ -20,13 +20,7 @@ objectron.ngramnode = (function () {
 
     that.prob = function (hashSequence) {
       
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return 1; // ends recursion
@@ -46,13 +40,7 @@ objectron.ngramnode = (function () {
       // ngramnode after hashSequence
       // TODO: change from mutator to accessor
 
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return this; // end recursion
@@ -66,37 +54,6 @@ objectron.ngramnode = (function () {
       } // else
 
       return children[first].given(rest);
-    };
-
-    that.topTolerated = function (hashSequence, tolerance) {
-      // A set of most probable successors for the given sequence,
-      // ordered by probability, most probable first.
-      // The set contains those hashes with probability at least
-      // the greatest probability * (1 - tolerance).
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (typeof hashSequence === 'undefined') {
-        hashSequence = [];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
-
-      if (hashSequence.length <= 0) {
-        return histogram.topTolerated(tolerance);
-      } // else continue recursion
-
-      var first = hashSequence[0];
-      var rest = hashSequence.slice(1);
-
-      if (!children.hasOwnProperty(first)) {
-        // No such branch, therefore histogram is empty.
-        return [];
-      } // else
-      return children[first].topTolerated(rest, tolerance);
     };
 
     that.top = function (hashSequence, n) {
@@ -113,21 +70,11 @@ objectron.ngramnode = (function () {
         n = 0;
       }
 
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (typeof hashSequence === 'undefined') {
-        hashSequence = [];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return histogram.top(n);
-      } // else
+      } // else continue recursion
 
       var first = hashSequence[0];
       var rest = hashSequence.slice(1);
@@ -139,14 +86,52 @@ objectron.ngramnode = (function () {
       return children[first].top(rest, n);
     };
 
-    that.add = function (hashSequence) {
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
+    that.topTolerated = function (hashSequence, tolerance) {
+      // A set of most probable successors for the given sequence,
+      // ordered by probability, most probable first.
+      // The set contains those hashes with probability at least
+      // the greatest probability * (1 - tolerance).
+      hashSequence = toArray(hashSequence);
 
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
+      if (hashSequence.length <= 0) {
+        return histogram.topTolerated(tolerance);
+      } // else continue recursion
+
+      var first = hashSequence[0];
+      var rest = hashSequence.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
       } // else
+      return children[first].topTolerated(rest, tolerance);
+    };
+
+    that.topSubsetTolerated = function (given, subset, tolerance) {
+      // After the given sequence there is a set of options for
+      // the next event. Limit this set to the subset. In this subset
+      // there is zero to one most probable events. Filter out all events
+      // those probability differs from the most probable event at least
+      // 100 * tolerance percents.
+      given  = toArray(given );
+      subset = toArray(subset);
+
+      if (given.length <= 0) {
+        return histogram.topSubsetTolerated(subset, tolerance);
+      } // else continue recursion
+
+      var first = given[0];
+      var rest = given.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
+      } // else
+      return children[first].topSubsetTolerated(rest, subset, tolerance);
+    };
+
+    that.add = function (hashSequence) {
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return;
@@ -166,13 +151,7 @@ objectron.ngramnode = (function () {
       // Parameter
       //   hashSequence
       //     
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return;

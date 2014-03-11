@@ -1,4 +1,4 @@
-/*! objectron - v0.0.1 - 2014-03-10
+/*! objectron - v0.0.1 - 2014-03-11
  * https://github.com/axelpale/objectronjs
  *
  * Copyright (c) 2014 Akseli Palen <akseli.palen@gmail.com>;
@@ -20,6 +20,22 @@
 
 var isArray = function (possibleArray) {
   return Object.prototype.toString.call(possibleArray) === '[object Array]';
+};
+
+var toArray = function (value) {
+  // Turn a value to an array.
+  //   2       -> [2]
+  //   'a'     -> ['a']
+  //   [2]     -> [2]
+  //   other   -> []
+  if (typeof value === 'string' || typeof value === 'number') {
+    return [value];
+  }
+
+  if (isArray(value)) {
+    return value;
+  } // else
+  return [];
 };
 
 /*
@@ -198,6 +214,7 @@ objectron.unigram = (function () {
           h,
           probs,
           max,
+          minProb,
           toleratedHashes,
           toleratedProbs;
 
@@ -211,6 +228,7 @@ objectron.unigram = (function () {
           max = p;
         }
       }
+      minProb = max - max * tolerance;
 
       // Filter out the intolerated
       toleratedHashes = [];
@@ -218,7 +236,8 @@ objectron.unigram = (function () {
       for (i = 0; i < hashes.length; i += 1) {
         p = probs[i];
         h = hashes[i];
-        if (p > max - max * tolerance) {
+        if (p >= minProb) {
+          // Equivalent probability also 
           toleratedHashes.push(h);
           toleratedProbs[h] = p;
         }
@@ -307,7 +326,7 @@ objectron.unigram = (function () {
 ngram node
 
 TODO: hashSequence -> sequence
-TODO: hash -> key
+TODO: hash -> event
 */
 
 objectron.ngramnode = (function () {
@@ -325,13 +344,7 @@ objectron.ngramnode = (function () {
 
     that.prob = function (hashSequence) {
       
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return 1; // ends recursion
@@ -351,13 +364,7 @@ objectron.ngramnode = (function () {
       // ngramnode after hashSequence
       // TODO: change from mutator to accessor
 
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return this; // end recursion
@@ -371,37 +378,6 @@ objectron.ngramnode = (function () {
       } // else
 
       return children[first].given(rest);
-    };
-
-    that.topTolerated = function (hashSequence, tolerance) {
-      // A set of most probable successors for the given sequence,
-      // ordered by probability, most probable first.
-      // The set contains those hashes with probability at least
-      // the greatest probability * (1 - tolerance).
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (typeof hashSequence === 'undefined') {
-        hashSequence = [];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
-
-      if (hashSequence.length <= 0) {
-        return histogram.topTolerated(tolerance);
-      } // else continue recursion
-
-      var first = hashSequence[0];
-      var rest = hashSequence.slice(1);
-
-      if (!children.hasOwnProperty(first)) {
-        // No such branch, therefore histogram is empty.
-        return [];
-      } // else
-      return children[first].topTolerated(rest, tolerance);
     };
 
     that.top = function (hashSequence, n) {
@@ -418,21 +394,11 @@ objectron.ngramnode = (function () {
         n = 0;
       }
 
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (typeof hashSequence === 'undefined') {
-        hashSequence = [];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return histogram.top(n);
-      } // else
+      } // else continue recursion
 
       var first = hashSequence[0];
       var rest = hashSequence.slice(1);
@@ -444,14 +410,52 @@ objectron.ngramnode = (function () {
       return children[first].top(rest, n);
     };
 
-    that.add = function (hashSequence) {
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
+    that.topTolerated = function (hashSequence, tolerance) {
+      // A set of most probable successors for the given sequence,
+      // ordered by probability, most probable first.
+      // The set contains those hashes with probability at least
+      // the greatest probability * (1 - tolerance).
+      hashSequence = toArray(hashSequence);
 
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
+      if (hashSequence.length <= 0) {
+        return histogram.topTolerated(tolerance);
+      } // else continue recursion
+
+      var first = hashSequence[0];
+      var rest = hashSequence.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
       } // else
+      return children[first].topTolerated(rest, tolerance);
+    };
+
+    that.topSubsetTolerated = function (given, subset, tolerance) {
+      // After the given sequence there is a set of options for
+      // the next event. Limit this set to the subset. In this subset
+      // there is zero to one most probable events. Filter out all events
+      // those probability differs from the most probable event at least
+      // 100 * tolerance percents.
+      given  = toArray(given );
+      subset = toArray(subset);
+
+      if (given.length <= 0) {
+        return histogram.topSubsetTolerated(subset, tolerance);
+      } // else continue recursion
+
+      var first = given[0];
+      var rest = given.slice(1);
+
+      if (!children.hasOwnProperty(first)) {
+        // No such branch, therefore histogram is empty.
+        return [];
+      } // else
+      return children[first].topSubsetTolerated(rest, subset, tolerance);
+    };
+
+    that.add = function (hashSequence) {
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return;
@@ -471,13 +475,7 @@ objectron.ngramnode = (function () {
       // Parameter
       //   hashSequence
       //     
-      if (typeof hashSequence === 'string') {
-        hashSequence = [hashSequence];
-      }
-
-      if (!isArray(hashSequence)) {
-        throw 'error'; // TODO better error
-      } // else
+      hashSequence = toArray(hashSequence);
 
       if (hashSequence.length <= 0) {
         return;
@@ -614,6 +612,63 @@ objectron.objectron = (function () {
 
     return this.root.given(givenSequence).prob(sequence);
   };
+
+  Tron.prototype.top = function (n, sequenceLength) {
+    // n most probable event sequences for the next event.
+    // Each sequence contains sequenceLength events. 
+
+    throw 'not implemented';
+  };
+
+  Tron.prototype.topSingle = function () {
+    // Alias to top(1,1). Returns array of size 1 or 0.
+    // Easier to design.
+
+    var i, h, p,
+        alternatives;
+
+    var tolerance = 0.2;
+
+    // For each slice of previous history until single answer is found.
+    // history = ['a', 'b', 'c'];
+    // i = 0: h = ['a', 'b', 'c'];
+    // i = 1: h = ['b', 'c'];
+    // i = 2: h = ['c'];
+    // i = 3: h = [];
+    alternatives = null;
+    for (i = 0; i <= this.history.length; i += 1) {
+      h = this.history.slice(i);
+      p = this.root.given(h);
+      if (alternatives === null) {
+        alternatives = p.topTolerated([], tolerance);
+      } else {
+        alternatives = p.topSubsetTolerated([], alternatives, tolerance);
+      }
+
+      if (alternatives.length === 1) {
+        return alternatives.slice(0, 1); // No need to copy;not used elsewhere
+      } // else
+
+      if (alternatives.length === 0) {
+        // No data. Continue iteration to find more data.
+        alternatives = null;
+      } // else
+
+      // still more than one alternative
+    }
+    // If algorithm arrives here, there are still two or more alternatives
+    // or no data at all.
+
+    var noData = (alternatives === null);
+
+    if (noData) {
+      return [];
+    } // else
+
+    // Return the most probable
+    return alternatives.slice(0, 1);
+  };
+
 
   /*
   Tron.prototype.next = function () {

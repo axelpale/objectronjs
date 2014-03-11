@@ -71,6 +71,63 @@ objectron.objectron = (function () {
     return this.root.given(givenSequence).prob(sequence);
   };
 
+  Tron.prototype.top = function (n, sequenceLength) {
+    // n most probable event sequences for the next event.
+    // Each sequence contains sequenceLength events. 
+
+    throw 'not implemented';
+  };
+
+  Tron.prototype.topSingle = function () {
+    // Alias to top(1,1). Returns array of size 1 or 0.
+    // Easier to design.
+
+    var i, h, p,
+        alternatives;
+
+    var tolerance = 0.2;
+
+    // For each slice of previous history until single answer is found.
+    // history = ['a', 'b', 'c'];
+    // i = 0: h = ['a', 'b', 'c'];
+    // i = 1: h = ['b', 'c'];
+    // i = 2: h = ['c'];
+    // i = 3: h = [];
+    alternatives = null;
+    for (i = 0; i <= this.history.length; i += 1) {
+      h = this.history.slice(i);
+      p = this.root.given(h);
+      if (alternatives === null) {
+        alternatives = p.topTolerated([], tolerance);
+      } else {
+        alternatives = p.topSubsetTolerated([], alternatives, tolerance);
+      }
+
+      if (alternatives.length === 1) {
+        return alternatives.slice(0, 1); // No need to copy;not used elsewhere
+      } // else
+
+      if (alternatives.length === 0) {
+        // No data. Continue iteration to find more data.
+        alternatives = null;
+      } // else
+
+      // still more than one alternative
+    }
+    // If algorithm arrives here, there are still two or more alternatives
+    // or no data at all.
+
+    var noData = (alternatives === null);
+
+    if (noData) {
+      return [];
+    } // else
+
+    // Return the most probable
+    return alternatives.slice(0, 1);
+  };
+
+
   /*
   Tron.prototype.next = function () {
     // For each slice of previous history until single answer is found.
