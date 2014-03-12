@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit test suite</title>
+  <link rel="stylesheet" href="lib/qunit-1.13.0.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="lib/qunit-1.13.0.js"></script>
+  <script src="../objectron.js"></script>
+  <script type="text/javascript">
+    
+    test('isArray', function testCase() {
+      var isArray = objectron.util.isArray;
+      ok(isArray([]));
+      ok(!isArray('a'));
+      ok(!isArray());
+      ok(!isArray(1));
+      ok(!isArray({}));
+      ok(!isArray(/a/i)); // RegExp
+      ok(!isArray(null));
+    });
+    
+    test('toArray', function testCase() {
+      var toArray = objectron.util.toArray;
+      deepEqual(toArray(['a']), ['a']);
+      deepEqual(toArray('a'), ['a']);
+      deepEqual(toArray(1), [1]);
+      deepEqual(toArray(), []);
+      deepEqual(toArray(null), []);
+      deepEqual(toArray(Infinity), [Infinity]);
+      deepEqual(toArray([]), []);
+    });
+    
+    test('randomFromInterval', function testCase() {
+      var randomFromInterval = objectron.util.randomFromInterval;
+      var i, x;
+      var n = 1000;
+      var min = 1;
+      var max = 2;
+      var numIn = 0;
+      for (i = 0; i < n; i += 1) {
+        x = randomFromInterval(min, max);
+        if (min <= x || x < max) {
+          numIn += 1;
+        }
+      }
+
+      equal(numIn, n, 'all random samples should be in the interval');
+    });
+
+
+    
+  </script>
+</body>
+</html>

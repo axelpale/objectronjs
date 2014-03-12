@@ -1,4 +1,4 @@
-/*! objectron - v0.0.1 - 2014-03-11
+/*! objectron - v0.0.1 - 2014-03-12
  * https://github.com/axelpale/objectronjs
  *
  * Copyright (c) 2014 Akseli Palen <akseli.palen@gmail.com>;
@@ -36,6 +36,20 @@ var toArray = function (value) {
     return value;
   } // else
   return [];
+};
+
+var randomFromInterval = function (min, max) {
+  // Return a number for range [min,max)
+  // http://stackoverflow.com/a/7228322/638546
+  return Math.random() * (max - min) + min;
+};
+
+
+// The following lines are needed to test the util functions from outside.
+objectron.util = {
+  isArray: isArray,
+  toArray: toArray,
+  randomFromInterval: randomFromInterval
 };
 
 /*
@@ -265,6 +279,29 @@ objectron.unigram = (function () {
         return index[hash];
       } // else
       return Infinity;
+    };
+
+    that.sample = function () {
+      // Random sample from the distribution
+      // Complexity O(n)
+      // Could be made O(log(n)) by storing the CDF.
+      // If there is no data, return null.
+
+      var x, i, cumulativeSum;
+      x = randomFromInterval(0, countersSum);
+      cumulativeSum = 0;
+      for (i = 0; i < order.length; i += 1) {
+        // Add to cumulative sum until greater.
+        // Because random max is exclusive, counter sum
+        // will be greater at the last event at the latest.
+        cumulativeSum += counters[order[i]];
+        if (x < cumulativeSum) {
+          return order[i];
+        }
+      }
+
+      // Order is empty
+      return null;
     };
 
     that.size = function () {

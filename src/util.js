@@ -25,3 +25,11 @@ var randomFromInterval = function (min, max) {
   // http://stackoverflow.com/a/7228322/638546
   return Math.random() * (max - min) + min;
 };
+
+
+// The following lines are needed to test the util functions from outside.
+objectron.util = {
+  isArray: isArray,
+  toArray: toArray,
+  randomFromInterval: randomFromInterval
+};
