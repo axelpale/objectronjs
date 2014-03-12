@@ -227,6 +227,29 @@ objectron.unigram = (function () {
       return Infinity;
     };
 
+    that.sample = function () {
+      // Random sample from the distribution
+      // Complexity O(n)
+      // Could be made O(log(n)) by storing the CDF.
+      // If there is no data, return null.
+
+      var x, i, cumulativeSum;
+      x = randomFromInterval(0, countersSum);
+      cumulativeSum = 0;
+      for (i = 0; i < order.length; i += 1) {
+        // Add to cumulative sum until greater.
+        // Because random max is exclusive, counter sum
+        // will be greater at the last event at the latest.
+        cumulativeSum += counters[order[i]];
+        if (x < cumulativeSum) {
+          return order[i];
+        }
+      }
+
+      // Order is empty
+      return null;
+    };
+
     that.size = function () {
       // Number of different hashes
       return order.length;

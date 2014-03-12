@@ -19,3 +19,9 @@ var toArray = function (value) {
   } // else
   return [];
 };
+
+var randomFromInterval = function (min, max) {
+  // Return a number for range [min,max)
+  // http://stackoverflow.com/a/7228322/638546
+  return Math.random() * (max - min) + min;
+};
