@@ -49,6 +49,7 @@ module.exports = function(grunt) {
         src: [
           'src/intro.js',
           'src/util.js',
+          'src/adaptingcategoricaldistribution.js',
           'src/unigram.js',
           'src/ngramnode.js',
           'src/objectron.js',
@@ -164,6 +165,7 @@ module.exports = function(grunt) {
         options: {
           urls: [
             'http://localhost:8000/test/util.html',
+            'http://localhost:8000/test/adaptingcategoricaldistribution.html',
             'http://localhost:8000/test/unigram.html',
             'http://localhost:8000/test/ngramnode.html',
             'http://localhost:8000/test/objectron.html'
