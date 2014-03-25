@@ -45,7 +45,8 @@ complex implementation because decreasing affects round order.
 Normalized Random is selected because implementation easiness (one-liner!).
 Normalized Random decreased a random category. Most probable categories have
 largest probability to become decreased. In large scale the algorithm has
-a flattening effect to the distribution similar to Divide algorithm.
+a flattening effect to the distribution similar to Divide algorithm. Non-
+deterministicity makes Normalized Random hard to test.
 
 Related
 - unigram
@@ -457,7 +458,7 @@ objectron.adaptingCategoricalDistribution = (function () {
       return this.state.maxSize;
     } // else
 
-    delta = this.state.maxSize - newMaxSize;
+    delta = this.state.countersSum - newMaxSize;
 
     if (delta > 0) {
       // Need to decrease.

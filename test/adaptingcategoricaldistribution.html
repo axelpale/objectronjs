@@ -186,6 +186,13 @@
       u.maxSize(1);
       equal(u.numCategories(), 1);
     });
+
+    test('maxSize from zero', function testCase() {
+      var u = unit.create(0);
+      u.learn(['a', 'a', 'a', 'a', 'a', 'b', 'b', 'b', 'c', 'c']);
+      u.maxSize(1);
+      equal(u.numCategories(), 1);
+    });
     
   </script>
 </body>
