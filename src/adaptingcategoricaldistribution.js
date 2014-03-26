@@ -3,9 +3,9 @@
 Adapting Categorical Distribution
 
 In this distribution every category has its own integer counter. When
-an event of a category is taught to the distribution the counter of
+an event belonging to a category is taught to the distribution the counter of
 the category is increased by one. The events in the category with the biggest
-counter are the most probable one. Probability of an event is the proportion
+counter are the most probable ones. Probability of an event is the proportion
 of the counter of its category to the sum of all the distribution's counters.
 
 To avoid categories growing limitlessy and allow the distribution to adapt to
@@ -64,17 +64,18 @@ objectron.adaptingCategoricalDistribution = (function () {
   /////////////////
 
   
-  var sortOne = function (acd, event) {
-    // Move event to its position in a manner similar to insertion sort.
+  var sortOne = function (acd, category) {
+    // Move event category to its position in a manner similar to
+    // insertion sort.
     // 
     // Precondition
-    //   $event is only out of order event in $order.
-    //   $event exists in $counters, $indices and in $order.
-    var s, i, c, backwards, isLast, isFirst, tempEvent;
+    //   $category is only out of order category in $order.
+    //   $category exists in $counters, $indices and in $order.
+    var s, i, c, backwards, isLast, isFirst, tempCat;
 
     s = acd.state;
-    i = s.indices[event];
-    c = s.counters[event];
+    i = s.indices[category];
+    c = s.counters[category];
 
     // Recognize direction
     isLast = (i === s.order.length - 1);
@@ -92,29 +93,30 @@ objectron.adaptingCategoricalDistribution = (function () {
       }
     }
 
-    // Move until event in its place. Place most recent as front as possible.
+    // Move until category in its place.
+    // Place most recent as front as possible.
     if (backwards) {
       while (i !== 0 && s.counters[s.order[i - 1]] <= c) {
         // Swap towards head
-        tempEvent = s.order[i - 1];
-        s.order[i] = tempEvent;
-        s.order[i - 1] = event;
-        s.indices[tempEvent] = i;
+        tempCat = s.order[i - 1];
+        s.order[i] = tempCat;
+        s.order[i - 1] = category;
+        s.indices[tempCat] = i;
         i -= 1;
       }
     } else {
       while (i !== s.order.length - 1 && s.counters[s.order[i + 1]] > c) {
         // Swap towards tail
-        tempEvent = s.order[i + 1];
-        s.order[i] = tempEvent;
-        s.order[i + 1] = event;
-        s.indices[tempEvent] = i;
+        tempCat = s.order[i + 1];
+        s.order[i] = tempCat;
+        s.order[i + 1] = category;
+        s.indices[tempCat] = i;
         i += 1;
       }
     }
 
-    // Update event index
-    s.indices[event] = i;
+    // Update category index
+    s.indices[category] = i;
   };
 
   
@@ -131,11 +133,11 @@ objectron.adaptingCategoricalDistribution = (function () {
     if (typeof maxSize !== 'number') { maxSize = 0; }
 
     this.state = {
-      counters: {},
+      counters: {}, // Counter for each category
       countersSum: 0, // Sum of $counters
       maxSize: maxSize, // maxCountersSum
-      order: [], // Ordered most probable event first.
-      indices: {} // Event indices in $order array
+      order: [], // Ordered most probable category first.
+      indices: {} // Category indices in $order array
     };
   };
 
@@ -169,13 +171,13 @@ objectron.adaptingCategoricalDistribution = (function () {
   };
   
   ACD.prototype.head = function (n) {
-    // N most probable events
+    // N most probable event categories
     // 
     // Parameter
     //   n (optional, default 0)
-    //     0 to return all events in probability order.
+    //     0 to return all categories in probability order.
     // 
-    // Return array of events
+    // Return array of event categories
     var s = this.state;
     if (typeof n !== 'number') {
       n = 0;
@@ -192,15 +194,15 @@ objectron.adaptingCategoricalDistribution = (function () {
   };
 
   ACD.prototype.peak = function (deviationTolerance) {
-    // Return most probable event (probability X) and all those events whose 
-    // probability differs from X by not more than
+    // Return most probable category (probability X) and all those categories
+    // whose probability differs from X by not more than
     // deviationTolerance * 100 percent.
     //
     // Parameter
     //   deviationTolerance
     //     number in closed interval [0, 1]
     // 
-    // Return array of events
+    // Return array of categories
 
     var i, headLikelihood, minLikelihood,
         s = this.state;
@@ -264,8 +266,8 @@ objectron.adaptingCategoricalDistribution = (function () {
   };
 
   ACD.prototype.rank = function (events) {
-    // Order of the given events in the list of most probable events.
-    // Most probable event has rank 0.
+    // Order of the given events in the list of most probable categories.
+    // Most probable category has rank 0.
     // 
     // Return array of integers.
     var result = [],
@@ -373,7 +375,7 @@ objectron.adaptingCategoricalDistribution = (function () {
   // Mutators
 
   ACD.prototype.learn = function (events) {
-    // Increase the counters of these events
+    // Increase the counters of the categories of the events
     // 
     // Parameter
     //   events
@@ -406,7 +408,7 @@ objectron.adaptingCategoricalDistribution = (function () {
       // Update the sum
       s.countersSum += 1;
 
-      // Move the event to its place.
+      // Move the category to its place.
       sortOne(this, ev);
     }
 
@@ -480,6 +482,7 @@ objectron.adaptingCategoricalDistribution = (function () {
     // 
     // Precondition
     //   dumped contains counters in probability order, most probable first.
+    // 
     // Return this for chaining.
 
     var i, cat, count, s;
