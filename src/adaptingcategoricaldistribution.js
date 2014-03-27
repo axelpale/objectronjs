@@ -119,6 +119,80 @@ objectron.adaptingCategoricalDistribution = (function () {
     s.indices[category] = i;
   };
 
+  var sampleSimple = function (acd, n) {
+    // Take N samples randomly.
+    // Complexity O(n * m) where m is num of categories. This because
+    // cumulative distribution function is recalculated for every sample.
+    var x, i, j, cumulativeSum,
+        result = [],
+        s = acd.state;
+
+    if (s.order.length === 0 || n <= 0) {
+      return result;
+    } // else
+
+    for (i = 0; i < n; i += 1) {
+      x = randomFromInterval(0, s.countersSum);
+      cumulativeSum = 0;
+      for (j = 0; j < s.order.length; j += 1) {
+        // Add to cumulative sum until greater.
+        // Because random max is exclusive, counter sum
+        // will be greater at the last event at the latest.
+        cumulativeSum += s.counters[s.order[j]];
+        if (x < cumulativeSum) {
+          result.push(s.order[j]);
+          break;
+        }
+      }
+    }
+
+    return result;
+  };
+
+  var sampleOrdered = function (acd, n) {
+    // Take N samples randomly but return them in probability order.
+    // Calculates cumulative density function only once.
+    // Complexity O(n + m) but has quite large overhead compared to.
+    // sampleSimple. Good performance when there is large number of
+    // categories (about 30 or more) even if the results need to be
+    // shuffled.
+
+    var rands, cat, cumulativeSum, i, r,
+        result = [],
+        s = acd.state;
+
+    if (s.order.length === 0 || n <= 0) {
+      return result; // empty array
+    } // else
+
+    rands = randomOrderedSetFromInterval(n, 0, s.countersSum);
+
+    cat = 0;
+    cumulativeSum = s.counters[s.order[cat]];
+
+    for (i = 0; i < n; i += 1) {
+      r = rands[i];
+
+      // Use < instead of <= because inclusive head, exclusive tail.
+      if (r < cumulativeSum) {
+        result.push(s.order[cat]);
+      } else {
+        do {
+          // Add to cumulative sum until it becomes greater than $r.
+          // Because the interval tail is exclusive, $cumulativeSum
+          // will become greater than $r at least in the end.
+          cat += 1;
+          cumulativeSum += s.counters[s.order[cat]];
+        } while (cumulativeSum <= r);
+
+        result.push(s.order[cat]);
+      }
+    }
+
+    // Results in probability order.
+    return result;
+  };
+
   
 
   // Constructor
@@ -286,48 +360,42 @@ objectron.adaptingCategoricalDistribution = (function () {
     return result;
   };
 
-  ACD.prototype.sample = function (n) {
+  ACD.prototype.sample = function (n, isOrdered) {
     // Draw n samples from the distribution.
     // 
     // Parameter
     //   n (optional, default 1)
+    //     How many samples
+    //   isOrdered (optional, default false)
+    //     If true, results are ordered most probable samples first.
+    //     This can be done without additional penalty to efficiency.
     //
-    // Return array of events. Empty array if no data or n = 0
+    // Return
+    //   array of events. Empty array if no data or if n = 0
     //
     // Complexity
-    //   O(n*m) where m is number of categories
-    // 
-    // TODO
-    //   Complexity to O(n+m). Probably doable by first forming
-    //   an ordered set of random numbers in O(n).
+    //   Mixed O(n*m) and O(n+m) where m is number of categories
 
-    var x, i, j, cumulativeSum,
-        result = [],
+    var manyCategories, r,
         s = this.state;
 
     // Normalize params
     if (typeof n !== 'number') { n = 1; }
+    if (typeof isOrdered !== 'boolean') { isOrdered = false; }
 
-    if (s.order.length === 0 || n <= 0) {
-      return result;
-    } // else
+    // Two algorithms to choose from
+    if (isOrdered) {
+      r = sampleOrdered(this, n);
+    } else {
 
-    for (i = 0; i < n; i += 1) {
-      x = randomFromInterval(0, s.countersSum);
-      cumulativeSum = 0;
-      for (j = 0; j < s.order.length; j += 1) {
-        // Add to cumulative sum until greater.
-        // Because random max is exclusive, counter sum
-        // will be greater at the last event at the latest.
-        cumulativeSum += s.counters[s.order[j]];
-        if (x < cumulativeSum) {
-          result.push(s.order[j]);
-          break;
-        }
+      manyCategories = s.order.length > 30;
+      if (manyCategories) {
+        r = shuffle(sampleOrdered(this, n));
+      } else {
+        r = sampleSimple(this, n);
       }
     }
-
-    return result;
+    return r;
   };
 
   ACD.prototype.size = function () {

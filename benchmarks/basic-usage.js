@@ -1,10 +1,10 @@
 var objectron = require('../objectron');
 
 module.exports = {
-  name: 'Beuron',
+  name: 'objectron',
   tests: {
     'example case': function () {
-      var b = objectron.create();
+      var b = objectron.objectron.create();
     }
   }
 };

@@ -92,10 +92,8 @@
       var u = unit.create();
       u.learn(['a', 'b']);
 
-      var s,
-          i,
-          na = 0,
-          nb = 0,
+      var i, s,
+          na = 0, nb = 0,
           take = u.sample(10000);
       for (i = 0; i < take.length; i += 1) {
         s = take[i];
@@ -109,6 +107,41 @@
       equal(na + nb, 10000);
       ok(na > 4500, 'Fails sometimes but very rarely.');
       ok(nb > 4500, 'Fails sometimes but very rarely.');
+    });
+
+    test('sample, ordered', function testCase() {
+      // Non-deterministic test!!!
+      // = May fail sometimes
+      var u = unit.create();
+      u.learn(['a', 'a', 'b']);
+
+      var i, s,
+          na = 0, nb = 0,
+          take = u.sample(1000, true);
+
+      // a's first
+      for (i = 0; i < take.length; i += 1) {
+        s = take[i];
+        if (s === 'a') {
+          na += 1;
+        } else {
+          break;
+        }
+      }
+      equal(i, na);
+
+      // b's second
+      for (; i < take.length; i += 1) {
+        s = take[i];
+        if (s === 'b') {
+          nb += 1;
+        } else {
+          break;
+        }
+      }
+
+      equal(na + nb, 1000);
+      ok(na > nb + 100, 'Fails sometimes but very rarely.');
     });
 
     test('dumb & load', function testCase() {
